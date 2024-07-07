@@ -2,111 +2,119 @@
 
 namespace $NAMESPACE$;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Eloquent\Factory;
 
 class $CLASS$ extends ServiceProvider
 {
-    /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = false;
+    protected string $moduleName = '$MODULE$';
+
+    protected string $moduleNameLower = '$LOWER_NAME$';
 
     /**
      * Boot the application events.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
+        $this->registerCommands();
+        $this->registerCommandSchedules();
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
-        $this->registerFactories();
-        $this->loadMigrationsFrom(__DIR__ . '/../$MIGRATIONS_PATH$');
+        $this->loadMigrationsFrom(module_path($this->moduleName, '$MIGRATIONS_PATH$'));
     }
 
     /**
      * Register the service provider.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
-        //
+        $this->app->register(EventServiceProvider::class);
+        $this->app->register(RouteServiceProvider::class);
     }
 
     /**
-     * Register config.
-     *
-     * @return void
+     * Register commands in the format of Command::class
      */
-    protected function registerConfig()
+    protected function registerCommands(): void
     {
-        $this->publishes([
-            __DIR__.'/../$PATH_CONFIG$/config.php' => config_path('$LOWER_NAME$.php'),
-        ], 'config');
-        $this->mergeConfigFrom(
-            __DIR__.'/../$PATH_CONFIG$/config.php', '$LOWER_NAME$'
-        );
+        // $this->commands([]);
     }
 
     /**
-     * Register views.
-     *
-     * @return void
+     * Register command Schedules.
      */
-    public function registerViews()
+    protected function registerCommandSchedules(): void
     {
-        $viewPath = resource_path('views/modules/$LOWER_NAME$');
-
-        $sourcePath = __DIR__.'/../$PATH_VIEWS$';
-
-        $this->publishes([
-            $sourcePath => $viewPath
-        ],'views');
-
-        $this->loadViewsFrom(array_merge(array_map(function ($path) {
-            return $path . '/modules/$LOWER_NAME$';
-        }, \Config::get('view.paths')), [$sourcePath]), '$LOWER_NAME$');
+        // $this->app->booted(function () {
+        //     $schedule = $this->app->make(Schedule::class);
+        //     $schedule->command('inspire')->hourly();
+        // });
     }
 
     /**
      * Register translations.
-     *
-     * @return void
      */
-    public function registerTranslations()
+    public function registerTranslations(): void
     {
-        $langPath = resource_path('lang/modules/$LOWER_NAME$');
+        $langPath = resource_path('lang/modules/'.$this->moduleNameLower);
 
         if (is_dir($langPath)) {
-            $this->loadTranslationsFrom($langPath, '$LOWER_NAME$');
+            $this->loadTranslationsFrom($langPath, $this->moduleNameLower);
+            $this->loadJsonTranslationsFrom($langPath);
         } else {
-            $this->loadTranslationsFrom(__DIR__ .'/../$PATH_LANG$', '$LOWER_NAME$');
+            $this->loadTranslationsFrom(module_path($this->moduleName, '$PATH_LANG$'), $this->moduleNameLower);
+            $this->loadJsonTranslationsFrom(module_path($this->moduleName, '$PATH_LANG$'));
         }
     }
 
     /**
-     * Register an additional directory of factories.
-     * @source https://github.com/sebastiaanluca/laravel-resource-flow/blob/develop/src/Modules/ModuleServiceProvider.php#L66
+     * Register config.
      */
-    public function registerFactories()
+    protected function registerConfig(): void
     {
-        if (! app()->environment('production')) {
-            app(Factory::class)->load(__DIR__ . '/../$FACTORIES_PATH$');
-        }
+        $this->publishes([module_path($this->moduleName, '$PATH_CONFIG$/config.php') => config_path($this->moduleNameLower.'.php')], 'config');
+        $this->mergeConfigFrom(module_path($this->moduleName, '$PATH_CONFIG$/config.php'), $this->moduleNameLower);
+    }
+
+    /**
+     * Register views.
+     */
+    public function registerViews(): void
+    {
+        $viewPath = resource_path('views/modules/'.$this->moduleNameLower);
+        $sourcePath = module_path($this->moduleName, '$PATH_VIEWS$');
+
+        $this->publishes([$sourcePath => $viewPath], ['views', $this->moduleNameLower.'-module-views']);
+
+        $this->loadViewsFrom(array_merge($this->getPublishableViewPaths(), [$sourcePath]), $this->moduleNameLower);
+
+        $componentNamespace = str_replace('/', '\\', config('modules.namespace').'\\'.$this->moduleName.'\\'.ltrim(config('modules.paths.generator.component-class.path'), config('modules.paths.app_folder', '')));
+        Blade::componentNamespace($componentNamespace, $this->moduleNameLower);
     }
 
     /**
      * Get the services provided by the provider.
      *
-     * @return array
+     * @return array<string>
      */
-    public function provides()
+    public function provides(): array
     {
         return [];
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getPublishableViewPaths(): array
+    {
+        $paths = [];
+        foreach (config('view.paths') as $path) {
+            if (is_dir($path.'/modules/'.$this->moduleNameLower)) {
+                $paths[] = $path.'/modules/'.$this->moduleNameLower;
+            }
+        }
+
+        return $paths;
     }
 }

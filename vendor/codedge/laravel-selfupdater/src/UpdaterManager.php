@@ -1,186 +1,115 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Codedge\Updater;
 
-use Closure;
-use GuzzleHttp\Client;
-use Illuminate\Foundation\Application;
-use Codedge\Updater\Contracts\UpdaterContract;
 use Codedge\Updater\Contracts\SourceRepositoryTypeContract;
+use Codedge\Updater\Contracts\UpdaterContract;
+use Codedge\Updater\Models\UpdateExecutor;
+use Codedge\Updater\SourceRepositoryTypes\GiteaRepositoryType;
 use Codedge\Updater\SourceRepositoryTypes\GithubRepositoryType;
+use Codedge\Updater\SourceRepositoryTypes\GitlabRepositoryType;
+use Codedge\Updater\SourceRepositoryTypes\HttpRepositoryType;
+use Exception;
+use Illuminate\Foundation\Application;
+use InvalidArgumentException;
 
 /**
- * Updater.php.
+ * UpdaterManager.
  *
  * @author Holger Lösken <holger.loesken@codedge.de>
  * @copyright See LICENSE file that was distributed with this source code.
  */
-class UpdaterManager implements UpdaterContract
+final class UpdaterManager implements UpdaterContract
 {
-    /**
-     * Application instance.
-     *
-     * @var Application
-     */
-    protected $app;
+    protected Application $app;
 
     /**
-     * @var array
+     * @var array<string, SourceRepositoryTypeContract>
      */
-    protected $sources = [];
+    protected array $sources = [];
 
-    /**
-     * @var array
-     */
-    protected $customSourceCreators = [];
-
-    /**
-     * Create a new Updater manager instance.
-     *
-     * @param Application $app
-     */
     public function __construct(Application $app)
     {
         $this->app = $app;
     }
 
-    /**
-     * Get a source repository type instance.
-     *
-     * @param string $name
-     *
-     * @return SourceRepository
-     */
-    public function source($name = '')
+    public function source(string $name = ''): SourceRepositoryTypeContract
     {
-        $name = ! empty($name) ? $name : $this->getDefaultSourceRepository();
+        $name = $name ?: $this->getDefaultSourceRepository();
 
         return $this->sources[$name] = $this->get($name);
     }
 
-    /**
-     * Get the default source repository type.
-     *
-     * @return string
-     */
-    public function getDefaultSourceRepository()
+    public function getDefaultSourceRepository(): string
     {
         return $this->app['config']['self-update']['default'];
     }
 
-    /**
-     * @param SourceRepositoryTypeContract $sourceRepository
-     *
-     * @return SourceRepository
-     */
-    public function sourceRepository(SourceRepositoryTypeContract $sourceRepository)
+    public function sourceRepository(SourceRepositoryTypeContract $sourceRepository): SourceRepositoryTypeContract
     {
-        return new SourceRepository($sourceRepository);
+        return new SourceRepository($sourceRepository, $this->app->make(UpdateExecutor::class));
     }
 
-    /**
-     * Register a custom driver creator Closure.
-     *
-     * @param string  $source
-     * @param Closure $callback
-     *
-     * @return $this
-     */
-    public function extend($source, Closure $callback)
+    protected function getConfig(string $name): array
     {
-        $this->customRepositoryTypes[$source] = $callback;
+        if (isset($this->app['config']['self-update']['repository_types'][$name])) {
+            return $this->app['config']['self-update']['repository_types'][$name];
+        }
 
-        return $this;
+        return [];
     }
 
-    /**
-     * Dynamically call the default source repository instance.
-     *
-     * @param string $method
-     * @param array  $parameters
-     *
-     * @return mixed
-     */
-    public function __call($method, $parameters)
-    {
-        return call_user_func_array([$this->source(), $method], $parameters);
-    }
-
-    /**
-     * Get the source repository connection configuration.
-     *
-     * @param string $name
-     *
-     * @return array
-     */
-    protected function getConfig($name)
-    {
-        return $this->app['config']['self-update']['repository_types'][$name];
-    }
-
-    /**
+    /*
      * Attempt to get the right source repository instance.
-     *
-     * @param string $name
-     *
-     * @return SourceRepositoryTypeContract
      */
-    protected function get($name)
+    protected function get(string $name): SourceRepositoryTypeContract
     {
-        return isset($this->sources[$name]) ? $this->sources[$name] : $this->resolve($name);
+        return $this->sources[$name] ?? $this->resolve($name);
     }
 
     /**
      * Try to find the correct source repository implementation ;-).
      *
-     * @param string $name
-     *
      * @throws InvalidArgumentException
-     *
-     * @return mixed
      */
-    protected function resolve($name)
+    protected function resolve(string $name): SourceRepositoryTypeContract
     {
         $config = $this->getConfig($name);
 
-        if (is_null($config)) {
+        if (empty($config)) {
             throw new InvalidArgumentException("Source repository [{$name}] is not defined.");
         }
 
-        if (isset($this->customSourceCreators[$config['type']])) {
-            return $this->callCustomSourceCreators($config);
-        }
         $repositoryMethod = 'create'.ucfirst($name).'Repository';
 
-        if (method_exists($this, $repositoryMethod)) {
-            return $this->{$repositoryMethod}($config);
-        }
-        throw new InvalidArgumentException("Repository [{$name}] is not supported.");
+        return $this->{$repositoryMethod}();
     }
 
     /**
-     * Create an instance for the Github source repository.
-     *
-     * @param array $config
-     *
-     * @return SourceRepository
+     * @throws Exception
      */
-    protected function createGithubRepository(array $config)
+    protected function createGithubRepository(): SourceRepositoryTypeContract
     {
-        $client = new Client();
+        /** @var GithubRepositoryType $factory */
+        $factory = $this->app->make(GithubRepositoryType::class);
 
-        return $this->sourceRepository(new GithubRepositoryType($client, $config));
+        return $this->sourceRepository($factory->create());
     }
 
-    /**
-     * Call a custom source repository type.
-     *
-     * @param array $config
-     *
-     * @return mixed
-     */
-    protected function callCustomSourceCreators(array $config)
+    protected function createGitlabRepository(): SourceRepositoryTypeContract
     {
-        return $this->customSourceCreators[$config['type']]($this->app, $config);
+        return $this->sourceRepository($this->app->make(GitlabRepositoryType::class));
+    }
+
+    protected function createHttpRepository(): SourceRepositoryTypeContract
+    {
+        return $this->sourceRepository($this->app->make(HttpRepositoryType::class));
+    }
+
+    protected function createGiteaRepository(): SourceRepositoryTypeContract
+    {
+        return $this->sourceRepository($this->app->make(GiteaRepositoryType::class));
     }
 }

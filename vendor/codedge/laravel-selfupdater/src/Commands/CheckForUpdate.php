@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Codedge\Updater\Commands;
 
-use Illuminate\Console\Command;
 use Codedge\Updater\UpdaterManager;
+use Illuminate\Console\Command;
 
 class CheckForUpdate extends Command
 {
@@ -19,34 +21,20 @@ class CheckForUpdate extends Command
      */
     protected $description = 'Check if a new update is available.';
 
-    /**
-     * @var UpdaterManager
-     */
-    protected $updater;
+    protected UpdaterManager $updater;
 
-    /**
-     * CheckForUpdate constructor.
-     *
-     * @param UpdaterManager $updater
-     */
     public function __construct(UpdaterManager $updater)
     {
         parent::__construct();
         $this->updater = $updater;
     }
 
-    /**
-     * Execute the command.
-     */
-    public function handle()
+    public function handle(): void
     {
-        $prefix = $this->option('prefixVersionWith');
-        $suffix = $this->option('suffixVersionWith');
-
-        $currentVersion = $this->updater->source()->getVersionInstalled($prefix, $suffix);
+        $currentVersion = $this->updater->source()->getVersionInstalled();
         $isAvail = $this->updater->source()->isNewVersionAvailable($currentVersion);
 
-        if ($isAvail) {
+        if ($isAvail === true) {
             $newVersion = $this->updater->source()->getVersionAvailable();
             $this->info('A new version ['.$newVersion.'] is available.');
         } else {

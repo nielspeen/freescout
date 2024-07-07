@@ -9,7 +9,7 @@ class Updater extends Runner
     /**
      * Update the dependencies for the specified module by given the module name.
      *
-     * @param string $module
+     * @param  string  $module
      */
     public function update($module)
     {
@@ -23,8 +23,15 @@ class Updater extends Runner
     }
 
     /**
-     * @param Module $module
+     * Check if composer should output anything.
+     *
+     * @return string
      */
+    private function isComposerSilenced()
+    {
+        return config('modules.composer.composer-output') === false ? ' --quiet' : '';
+    }
+
     private function installRequires(Module $module)
     {
         $packages = $module->getComposerAttr('require', []);
@@ -34,14 +41,11 @@ class Updater extends Runner
             $concatenatedPackages .= "\"{$name}:{$version}\" ";
         }
 
-        if (!empty($concatenatedPackages)) {
-            $this->run("composer require {$concatenatedPackages}");
+        if (! empty($concatenatedPackages)) {
+            $this->run("composer require {$concatenatedPackages}{$this->isComposerSilenced()}");
         }
     }
 
-    /**
-     * @param Module $module
-     */
     private function installDevRequires(Module $module)
     {
         $devPackages = $module->getComposerAttr('require-dev', []);
@@ -51,14 +55,11 @@ class Updater extends Runner
             $concatenatedPackages .= "\"{$name}:{$version}\" ";
         }
 
-        if (!empty($concatenatedPackages)) {
-            $this->run("composer require --dev {$concatenatedPackages}");
+        if (! empty($concatenatedPackages)) {
+            $this->run("composer require --dev {$concatenatedPackages}{$this->isComposerSilenced()}");
         }
     }
 
-    /**
-     * @param Module $module
-     */
     private function copyScriptsToMainComposerJson(Module $module)
     {
         $scripts = $module->getComposerAttr('scripts', []);
@@ -68,6 +69,7 @@ class Updater extends Runner
         foreach ($scripts as $key => $script) {
             if (array_key_exists($key, $composer['scripts'])) {
                 $composer['scripts'][$key] = array_unique(array_merge($composer['scripts'][$key], $script));
+
                 continue;
             }
             $composer['scripts'] = array_merge($composer['scripts'], [$key => $script]);

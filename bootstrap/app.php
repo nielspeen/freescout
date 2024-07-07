@@ -11,8 +11,14 @@
 |
 */
 
+if(isset($_SERVER["HTTP_X_REAL_DOMAIN"])) {
+    $_SERVER["SERVER_NAME"] = $_SERVER["HTTP_X_REAL_DOMAIN"];
+    $_SERVER["HTTP_HOST"] = $_SERVER["HTTP_X_REAL_DOMAIN"];
+    $_SERVER["HOST"] = $_SERVER["HTTP_X_REAL_DOMAIN"];
+}
+
 $app = new Illuminate\Foundation\Application(
-    realpath(__DIR__.'/../')
+    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
 
 /*

@@ -2,113 +2,101 @@
 
 namespace Nwidart\Modules\Providers;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
-use Nwidart\Modules\Commands\CommandMakeCommand;
-use Nwidart\Modules\Commands\ControllerMakeCommand;
-use Nwidart\Modules\Commands\DisableCommand;
-use Nwidart\Modules\Commands\DumpCommand;
-use Nwidart\Modules\Commands\EnableCommand;
-use Nwidart\Modules\Commands\EventMakeCommand;
-use Nwidart\Modules\Commands\FactoryMakeCommand;
-use Nwidart\Modules\Commands\InstallCommand;
-use Nwidart\Modules\Commands\JobMakeCommand;
-use Nwidart\Modules\Commands\ListCommand;
-use Nwidart\Modules\Commands\ListenerMakeCommand;
-use Nwidart\Modules\Commands\MailMakeCommand;
-use Nwidart\Modules\Commands\MiddlewareMakeCommand;
-use Nwidart\Modules\Commands\MigrateCommand;
-use Nwidart\Modules\Commands\MigrateRefreshCommand;
-use Nwidart\Modules\Commands\MigrateResetCommand;
-use Nwidart\Modules\Commands\MigrateRollbackCommand;
-use Nwidart\Modules\Commands\MigrateStatusCommand;
-use Nwidart\Modules\Commands\MigrationMakeCommand;
-use Nwidart\Modules\Commands\ModelMakeCommand;
-use Nwidart\Modules\Commands\ModuleMakeCommand;
-use Nwidart\Modules\Commands\NotificationMakeCommand;
-use Nwidart\Modules\Commands\PolicyMakeCommand;
-use Nwidart\Modules\Commands\ProviderMakeCommand;
-use Nwidart\Modules\Commands\PublishCommand;
-use Nwidart\Modules\Commands\PublishConfigurationCommand;
-use Nwidart\Modules\Commands\PublishMigrationCommand;
-use Nwidart\Modules\Commands\PublishTranslationCommand;
-use Nwidart\Modules\Commands\RequestMakeCommand;
-use Nwidart\Modules\Commands\ResourceMakeCommand;
-use Nwidart\Modules\Commands\RouteProviderMakeCommand;
-use Nwidart\Modules\Commands\RuleMakeCommand;
-use Nwidart\Modules\Commands\SeedCommand;
-use Nwidart\Modules\Commands\SeedMakeCommand;
-use Nwidart\Modules\Commands\SetupCommand;
-use Nwidart\Modules\Commands\TestMakeCommand;
-use Nwidart\Modules\Commands\UnUseCommand;
-use Nwidart\Modules\Commands\UpdateCommand;
-use Nwidart\Modules\Commands\UseCommand;
+use Nwidart\Modules\Commands;
 
 class ConsoleServiceProvider extends ServiceProvider
 {
-    protected $defer = false;
-
-    /**
-     * The available commands
-     *
-     * @var array
-     */
-    protected $commands = [
-        CommandMakeCommand::class,
-        ControllerMakeCommand::class,
-        DisableCommand::class,
-        DumpCommand::class,
-        EnableCommand::class,
-        EventMakeCommand::class,
-        JobMakeCommand::class,
-        ListenerMakeCommand::class,
-        MailMakeCommand::class,
-        MiddlewareMakeCommand::class,
-        NotificationMakeCommand::class,
-        ProviderMakeCommand::class,
-        RouteProviderMakeCommand::class,
-        InstallCommand::class,
-        ListCommand::class,
-        ModuleMakeCommand::class,
-        FactoryMakeCommand::class,
-        PolicyMakeCommand::class,
-        RequestMakeCommand::class,
-        RuleMakeCommand::class,
-        MigrateCommand::class,
-        MigrateRefreshCommand::class,
-        MigrateResetCommand::class,
-        MigrateRollbackCommand::class,
-        MigrateStatusCommand::class,
-        MigrationMakeCommand::class,
-        ModelMakeCommand::class,
-        PublishCommand::class,
-        PublishConfigurationCommand::class,
-        PublishMigrationCommand::class,
-        PublishTranslationCommand::class,
-        SeedCommand::class,
-        SeedMakeCommand::class,
-        SetupCommand::class,
-        UnUseCommand::class,
-        UpdateCommand::class,
-        UseCommand::class,
-        ResourceMakeCommand::class,
-        TestMakeCommand::class,
-    ];
-
-    /**
-     * Register the commands.
-     */
-    public function register()
+    public function register(): void
     {
-        $this->commands($this->commands);
+        $this->commands(config('modules.commands', self::defaultCommands()->toArray()));
+    }
+
+    public function provides(): array
+    {
+        return self::defaultCommands()->toArray();
     }
 
     /**
-     * @return array
+     * Get the package default commands.
      */
-    public function provides()
+    public static function defaultCommands(): Collection
     {
-        $provides = $this->commands;
+        return collect([
+            // Actions Commands
+            Commands\Actions\CheckLangCommand::class,
+            Commands\Actions\DisableCommand::class,
+            Commands\Actions\DumpCommand::class,
+            Commands\Actions\EnableCommand::class,
+            Commands\Actions\InstallCommand::class,
+            Commands\Actions\ListCommand::class,
+            Commands\Actions\ModelPruneCommand::class,
+            Commands\Actions\ModelShowCommand::class,
+            Commands\Actions\ModuleDeleteCommand::class,
+            Commands\Actions\UnUseCommand::class,
+            Commands\Actions\UpdateCommand::class,
+            Commands\Actions\UseCommand::class,
 
-        return $provides;
+            // Database Commands
+            Commands\Database\MigrateCommand::class,
+            Commands\Database\MigrateRefreshCommand::class,
+            Commands\Database\MigrateResetCommand::class,
+            Commands\Database\MigrateRollbackCommand::class,
+            Commands\Database\MigrateStatusCommand::class,
+            Commands\Database\SeedCommand::class,
+
+            // Make Commands
+            Commands\Make\ActionMakeCommand::class,
+            Commands\Make\CastMakeCommand::class,
+            Commands\Make\ChannelMakeCommand::class,
+            Commands\Make\ClassMakeCommand::class,
+            Commands\Make\CommandMakeCommand::class,
+            Commands\Make\ComponentClassMakeCommand::class,
+            Commands\Make\ComponentViewMakeCommand::class,
+            Commands\Make\ControllerMakeCommand::class,
+            Commands\Make\EventMakeCommand::class,
+            Commands\Make\EventProviderMakeCommand::class,
+            Commands\Make\EnumMakeCommand::class,
+            Commands\Make\ExceptionMakeCommand::class,
+            Commands\Make\FactoryMakeCommand::class,
+            Commands\Make\InterfaceMakeCommand::class,
+            Commands\Make\HelperMakeCommand::class,
+            Commands\Make\JobMakeCommand::class,
+            Commands\Make\ListenerMakeCommand::class,
+            Commands\Make\MailMakeCommand::class,
+            Commands\Make\MiddlewareMakeCommand::class,
+            Commands\Make\MigrationMakeCommand::class,
+            Commands\Make\ModelMakeCommand::class,
+            Commands\Make\ModuleMakeCommand::class,
+            Commands\Make\NotificationMakeCommand::class,
+            Commands\Make\ObserverMakeCommand::class,
+            Commands\Make\PolicyMakeCommand::class,
+            Commands\Make\ProviderMakeCommand::class,
+            Commands\Make\RepositoryMakeCommand::class,
+            Commands\Make\RequestMakeCommand::class,
+            Commands\Make\ResourceMakeCommand::class,
+            Commands\Make\RouteProviderMakeCommand::class,
+            Commands\Make\RuleMakeCommand::class,
+            Commands\Make\ScopeMakeCommand::class,
+            Commands\Make\SeedMakeCommand::class,
+            Commands\Make\ServiceMakeCommand::class,
+            Commands\Make\TraitMakeCommand::class,
+            Commands\Make\TestMakeCommand::class,
+            Commands\Make\ViewMakeCommand::class,
+
+            //Publish Commands
+            Commands\Publish\PublishCommand::class,
+            Commands\Publish\PublishConfigurationCommand::class,
+            Commands\Publish\PublishMigrationCommand::class,
+            Commands\Publish\PublishTranslationCommand::class,
+
+            // Other Commands
+            Commands\ComposerUpdateCommand::class,
+            Commands\LaravelModulesV6Migrator::class,
+            Commands\SetupCommand::class,
+
+            Commands\Database\MigrateFreshCommand::class,
+        ]);
     }
 }

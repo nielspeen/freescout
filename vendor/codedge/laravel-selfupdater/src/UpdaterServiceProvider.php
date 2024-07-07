@@ -1,30 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Codedge\Updater;
 
-use Illuminate\Support\ServiceProvider;
 use Codedge\Updater\Commands\CheckForUpdate;
-use Illuminate\Contracts\Container\Container;
+use Codedge\Updater\Models\UpdateExecutor;
+use Codedge\Updater\Notifications\EventHandler;
+use Codedge\Updater\SourceRepositoryTypes\GithubRepositoryType;
+use Illuminate\Support\ServiceProvider;
 
-/**
- * UpdaterServiceProvider.php.
- *
- * @author Holger Lösken <holger.loesken@codedge.de>
- * @copyright See LICENSE file that was distributed with this source code.
- */
 class UpdaterServiceProvider extends ServiceProvider
 {
-    /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = false;
+    protected bool $defer = false;
 
-    /**
-     * Perform post-registration booting of services.
-     */
-    public function boot()
+    public function boot(): void
     {
         $this->publishes([
             __DIR__.'/../config/self-update.php' => config_path('self-update.php'),
@@ -33,10 +23,7 @@ class UpdaterServiceProvider extends ServiceProvider
         $this->loadViews();
     }
 
-    /**
-     * Set up views.
-     */
-    protected function loadViews()
+    protected function loadViews(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'self-update');
         $this->publishes([
@@ -44,21 +31,17 @@ class UpdaterServiceProvider extends ServiceProvider
         ]);
     }
 
-    /**
-     * Register the service provider.
-     */
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/self-update.php', 'self-update');
+
+        $this->app['events']->subscribe(EventHandler::class);
 
         $this->registerCommands();
         $this->registerManager();
     }
 
-    /**
-     * Register the package its commands.
-     */
-    protected function registerCommands()
+    protected function registerCommands(): void
     {
         $this->commands([
             CheckForUpdate::class,
@@ -73,23 +56,23 @@ class UpdaterServiceProvider extends ServiceProvider
         });
     }
 
-    /**
-     * Register the manager class.
-     */
-    protected function registerManager()
+    protected function registerManager(): void
     {
-        $this->app->singleton('updater', function (Container $app) {
-            return new UpdaterManager($app);
+        $this->app->singleton('updater', function () {
+            return new UpdaterManager(app());
         });
+
+        $this->app->bind(GithubRepositoryType::class, function (): GithubRepositoryType {
+            return new GithubRepositoryType(
+                config('self-update.repository_types.github'),
+                $this->app->make(UpdateExecutor::class)
+            );
+        });
+
         $this->app->alias('updater', UpdaterManager::class);
     }
 
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
+    public function provides(): array
     {
         return [
             'updater',

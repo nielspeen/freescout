@@ -13,9 +13,8 @@ class DropSlugColumnInMailboxesTable extends Migration
      */
     public function up()
     {
-        // slug field is not used.
         Schema::table('mailboxes', function (Blueprint $table) {
-            // Index is dropped automatically.
+            $table->dropIndex('mailboxes_slug_unique');
             $table->dropColumn('slug');
         });
     }

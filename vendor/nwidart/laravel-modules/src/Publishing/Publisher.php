@@ -4,8 +4,8 @@ namespace Nwidart\Modules\Publishing;
 
 use Illuminate\Console\Command;
 use Nwidart\Modules\Contracts\PublisherInterface;
+use Nwidart\Modules\Contracts\RepositoryInterface;
 use Nwidart\Modules\Module;
-use Nwidart\Modules\Repository;
 
 abstract class Publisher implements PublisherInterface
 {
@@ -19,7 +19,7 @@ abstract class Publisher implements PublisherInterface
     /**
      * The modules repository instance.
      *
-     * @var \Nwidart\Modules\Repository
+     * @var RepositoryInterface
      */
     protected $repository;
 
@@ -53,8 +53,6 @@ abstract class Publisher implements PublisherInterface
 
     /**
      * The constructor.
-     *
-     * @param Module $module
      */
     public function __construct(Module $module)
     {
@@ -98,11 +96,9 @@ abstract class Publisher implements PublisherInterface
     /**
      * Set modules repository instance.
      *
-     * @param \Nwidart\Modules\Repository $repository
-     *
      * @return $this
      */
-    public function setRepository(Repository $repository)
+    public function setRepository(RepositoryInterface $repository)
     {
         $this->repository = $repository;
 
@@ -112,7 +108,7 @@ abstract class Publisher implements PublisherInterface
     /**
      * Get modules repository instance.
      *
-     * @return \Nwidart\Modules\Repository
+     * @return RepositoryInterface
      */
     public function getRepository()
     {
@@ -122,7 +118,6 @@ abstract class Publisher implements PublisherInterface
     /**
      * Set console instance.
      *
-     * @param \Illuminate\Console\Command $console
      *
      * @return $this
      */
@@ -172,26 +167,27 @@ abstract class Publisher implements PublisherInterface
      */
     public function publish()
     {
-        if (!$this->console instanceof Command) {
+        if (! $this->console instanceof Command) {
             $message = "The 'console' property must instance of \\Illuminate\\Console\\Command.";
 
             throw new \RuntimeException($message);
         }
 
-        if (!$this->getFilesystem()->isDirectory($sourcePath = $this->getSourcePath())) {
+        if (! $this->getFilesystem()->isDirectory($sourcePath = $this->getSourcePath())) {
             return;
         }
 
-        if (!$this->getFilesystem()->isDirectory($destinationPath = $this->getDestinationPath())) {
+        if (! $this->getFilesystem()->isDirectory($destinationPath = $this->getDestinationPath())) {
             $this->getFilesystem()->makeDirectory($destinationPath, 0775, true);
         }
 
         if ($this->getFilesystem()->copyDirectory($sourcePath, $destinationPath)) {
             if ($this->showMessage === true) {
-                $this->console->line("<info>Published</info>: {$this->module->getStudlyName()}");
+                $this->console->components->task($this->module->getStudlyName(), fn () => true);
             }
         } else {
-            $this->console->error($this->error);
+            $this->console->components->task($this->module->getStudlyName(), fn () => false);
+            $this->console->components->error($this->error);
         }
     }
 }

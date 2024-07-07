@@ -1,9 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Codedge\Updater;
 
-use Illuminate\Support\Facades\Artisan;
 use Codedge\Updater\Contracts\SourceRepositoryTypeContract;
+use Codedge\Updater\Models\Release;
+use Codedge\Updater\Models\UpdateExecutor;
+use Codedge\Updater\Traits\SupportPrivateAccessToken;
+use Codedge\Updater\Traits\UseVersionFile;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Artisan;
 
 /**
  * SourceRepository.
@@ -11,84 +18,59 @@ use Codedge\Updater\Contracts\SourceRepositoryTypeContract;
  * @author Holger Lösken <holger.loesken@codedge.de>
  * @copyright See LICENSE file that was distributed with this source code.
  */
-class SourceRepository implements SourceRepositoryTypeContract
+final class SourceRepository implements SourceRepositoryTypeContract
 {
-    /**
-     * @var SourceRepositoryTypeContract
-     */
-    protected $sourceRepository;
+    use UseVersionFile;
+    use SupportPrivateAccessToken;
 
-    /**
-     * SourceRepository constructor.
-     *
-     * @param SourceRepositoryTypeContract $sourceRepository
-     */
-    public function __construct(SourceRepositoryTypeContract $sourceRepository)
+    protected SourceRepositoryTypeContract $sourceRepository;
+    protected UpdateExecutor $updateExecutor;
+
+    public function __construct(SourceRepositoryTypeContract $sourceRepository, UpdateExecutor $updateExecutor)
     {
         $this->sourceRepository = $sourceRepository;
+        $this->updateExecutor = $updateExecutor;
     }
 
     /**
      * Fetches the latest version. If you do not want the latest version, specify one and pass it.
-     *
-     * @param string $version
-     *
-     * @return mixed
      */
-    public function fetch($version = '')
+    public function fetch(string $version = ''): Release
     {
-        $version = ! empty($version) ? $version : $this->getVersionAvailable();
+        $version = $version ?: $this->getVersionAvailable();
 
         return $this->sourceRepository->fetch($version);
     }
 
     /**
-     * Perform the actual update process.
-     *
-     * @param string $version       Define the version you want to update to
-     * @param bool   $forceFetching Forces a fresh download of the latest update version
-     *
-     * @return bool
+     * @throws \Exception
      */
-    public function update($version = '', $forceFetching = true)
+    public function update(Release $release): bool
     {
-        $version = ! empty($version) ? $version : $this->getVersionAvailable();
+        return $this->updateExecutor->run($release);
+    }
 
-        if ($forceFetching) {
-            $this->fetch($version);
-        }
-
-        $this->preUpdateArtisanCommands();
-        $updateStatus = $this->sourceRepository->update($version);
-        $this->postUpdateArtisanCommands();
-
-        return $updateStatus;
+    public function getReleases(): Response
+    {
+        return $this->sourceRepository->getReleases();
     }
 
     /**
      * Check repository if a newer version than the installed one is available.
-     *
-     * @param string $currentVersion
-     *
-     * @return bool
      */
-    public function isNewVersionAvailable($currentVersion = '')
+    public function isNewVersionAvailable(string $currentVersion = ''): bool
     {
         return $this->sourceRepository->isNewVersionAvailable($currentVersion);
     }
 
-    /**
-     * Get the version that is currenly installed.
+    /*
+     * Get the version that is currently installed.
      * Example: 1.1.0 or v1.1.0 or "1.1.0 version".
      *
-     * @param string $prepend
-     * @param string $append
-     *
-     * @return string
      */
-    public function getVersionInstalled($prepend = '', $append = '')
+    public function getVersionInstalled(string $prepend = '', string $append = ''): string
     {
-        return $this->sourceRepository->getVersionInstalled($prepend, $append);
+        return $this->sourceRepository->getVersionInstalled($prepend, $append); //@phpstan-ignore-line
     }
 
     /**
@@ -97,10 +79,8 @@ class SourceRepository implements SourceRepositoryTypeContract
      *
      * @param string $prepend Prepend a string to the latest version
      * @param string $append  Append a string to the latest version
-     *
-     * @return string
      */
-    public function getVersionAvailable($prepend = '', $append = '')
+    public function getVersionAvailable(string $prepend = '', string $append = ''): string
     {
         return $this->sourceRepository->getVersionAvailable($prepend, $append);
     }
@@ -108,20 +88,28 @@ class SourceRepository implements SourceRepositoryTypeContract
     /**
      * Run pre update artisan commands from config.
      */
-    protected function preUpdateArtisanCommands()
+    public function preUpdateArtisanCommands(): int
     {
-        collect(config('self-update.artisan_commands.pre_update'))->every(function ($commandParams, $commandKey) {
+        $commands = collect(config('self-update.artisan_commands.pre_update'));
+
+        $commands->each(function ($commandParams, $commandKey) {
             Artisan::call($commandKey, $commandParams['params']);
         });
+
+        return $commands->count();
     }
 
     /**
      * Run post update artisan commands from config.
      */
-    protected function postUpdateArtisanCommands()
+    public function postUpdateArtisanCommands(): int
     {
-        collect(config('self-update.artisan_commands.post_update'))->every(function ($commandParams, $commandKey) {
+        $commands = collect(config('self-update.artisan_commands.post_update'));
+
+        $commands->each(function ($commandParams, $commandKey) {
             Artisan::call($commandKey, $commandParams['params']);
         });
+
+        return $commands->count();
     }
 }

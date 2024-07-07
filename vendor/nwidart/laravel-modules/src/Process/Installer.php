@@ -4,7 +4,7 @@ namespace Nwidart\Modules\Process;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Nwidart\Modules\Repository;
+use Nwidart\Modules\Contracts\RepositoryInterface;
 use Symfony\Component\Process\Process;
 
 class Installer
@@ -26,7 +26,7 @@ class Installer
     /**
      * The module repository instance.
      *
-     * @var \Nwidart\Modules\Repository
+     * @var \Nwidart\Modules\Contracts\RepositoryInterface
      */
     protected $repository;
 
@@ -52,12 +52,22 @@ class Installer
     protected $timeout = 3360;
 
     /**
+     * @var null|string
+     */
+    private $type;
+
+    /**
+     * @var bool
+     */
+    private $tree;
+
+    /**
      * The constructor.
      *
-     * @param string $name
-     * @param string $version
-     * @param string $type
-     * @param bool   $tree
+     * @param  string  $name
+     * @param  string  $version
+     * @param  string  $type
+     * @param  bool  $tree
      */
     public function __construct($name, $version = null, $type = null, $tree = false)
     {
@@ -70,8 +80,7 @@ class Installer
     /**
      * Set destination path.
      *
-     * @param string $path
-     *
+     * @param  string  $path
      * @return $this
      */
     public function setPath($path)
@@ -84,11 +93,9 @@ class Installer
     /**
      * Set the module repository instance.
      *
-     * @param \Nwidart\Modules\Repository $repository
-     *
      * @return $this
      */
-    public function setRepository(Repository $repository)
+    public function setRepository(RepositoryInterface $repository)
     {
         $this->repository = $repository;
 
@@ -98,7 +105,6 @@ class Installer
     /**
      * Set console command instance.
      *
-     * @param \Illuminate\Console\Command $console
      *
      * @return $this
      */
@@ -112,8 +118,7 @@ class Installer
     /**
      * Set process timeout.
      *
-     * @param int $timeout
-     *
+     * @param  int  $timeout
      * @return $this
      */
     public function setTimeout($timeout)
@@ -191,6 +196,7 @@ class Installer
 
             case 'gitlab':
                 return "git@gitlab.com:{$this->name}.git";
+
                 break;
 
             case 'bitbucket':
@@ -209,6 +215,7 @@ class Installer
                 }
 
                 return;
+
                 break;
         }
     }
@@ -243,10 +250,10 @@ class Installer
     public function getPackageName()
     {
         if (is_null($this->version)) {
-            return $this->name . ':dev-master';
+            return $this->name.':dev-master';
         }
 
-        return $this->name . ':' . $this->version;
+        return $this->name.':'.$this->version;
     }
 
     /**
@@ -256,7 +263,7 @@ class Installer
      */
     public function installViaGit()
     {
-        return new Process(sprintf(
+        return Process::fromShellCommandline(sprintf(
             'cd %s && git clone %s %s && cd %s && git checkout %s',
             base_path(),
             $this->getRepoUrl(),
@@ -273,7 +280,7 @@ class Installer
      */
     public function installViaSubtree()
     {
-        return new Process(sprintf(
+        return Process::fromShellCommandline(sprintf(
             'cd %s && git remote add %s %s && git subtree add --prefix=%s --squash %s %s',
             base_path(),
             $this->getModuleName(),
@@ -291,7 +298,7 @@ class Installer
      */
     public function installViaComposer()
     {
-        return new Process(sprintf(
+        return Process::fromShellCommandline(sprintf(
             'cd %s && composer require %s',
             base_path(),
             $this->getPackageName()
