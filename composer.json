@@ -11,6 +11,7 @@
     ],
     "require": {
         "php": ">=8.3.0",
+        "andreiio/blade-remix-icon": "^3.3",
         "barryvdh/laravel-translation-manager": "^0.6.6",
         "codedge/laravel-selfupdater": "*",
         "devfactory/minify": "*",

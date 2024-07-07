@@ -181,40 +181,6 @@ body.user-is-guest {
     top: 10px;
     z-index: 9;
 }
-.sidebar-menu-toggle {
-    background: #fff;
-    border: 1px solid #d3dae0;
-    border-radius: 3px;
-    display: none;
-    height: 36px;
-    padding: 0 9px;
-    position: relative;
-    margin-left: 12px;
-    margin-right: 12px;
-    top: 7px;
-    width: 36px;
-    cursor: pointer;
-    float: left;
-}
-.sidebar-menu-toggle:hover {
-    background-color: #e6e5e5;
-}
-.sidebar-menu-toggle .icon-bar {
-    background-color: #72808e;
-    display: block;
-    height: 2px;
-    border-radius: 1px;
-    margin-top: 3px;
-    position: relative;
-    top: -2px;
-}
-.sidebar-menu-toggle.active {
-    background: #3197d6;
-    border-color: #3197d6;
-}
-.sidebar-menu-toggle.active .icon-bar {
-    background-color: #fff;
-}
 .sidebar-menu a.no-active {
     color: #93a1af;
 }
@@ -295,9 +261,6 @@ body.user-is-guest {
     }
     .sidebar-menu > li > a {
         border-radius: 0;
-    }
-    .sidebar-menu-toggle {
-        display: block;
     }
     .sidebar-title {
         padding: 13px 0 0 0;

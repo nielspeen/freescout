@@ -2,9 +2,6 @@
 /public/hot
 /public/storage
 /storage/*.key
-# We are committing /vendor directory to make installation process super easy, even on a shared hosting:
-# - https://www.codeenigma.com/build/blog/do-you-really-need-composer-production
-# - https://getcomposer.org/doc/faqs/should-i-commit-the-dependencies-in-my-vendor-directory.md
 /vendor
 /.idea
 /.vagrant
@@ -13,19 +10,14 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 .env
-app/Console/Commands/Test*
 /bootstrap/compiled.php
 composer.phar
-#composer.lock
+composer.lock
 .DS_Store
 Thumbs.db
-#/.htaccess
 /public/css/builds/
 /public/js/builds/
 /public/.well-known
-/Modules
-/Modules/**/.git
-/public/modules
 /public/docs
 /storage/.ignore_locales
 /storage/.installed
