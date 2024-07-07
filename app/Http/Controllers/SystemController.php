@@ -183,22 +183,6 @@ class SystemController extends Controller
 
         // Check new version if enabled
         $new_version_available = false;
-        if (!\Config::get('app.disable_updating')) {
-            $latest_version = \Cache::remember('latest_version', 15, function () {
-                try {
-                    return \Updater::getVersionAvailable();
-                } catch (\Exception $e) {
-                    SystemController::$latest_version_error = $e->getMessage();
-                    return '';
-                }
-            });
-
-            if ($latest_version && version_compare($latest_version, \Config::get('app.version'), '>')) {
-                $new_version_available = true;
-            }
-        } else {
-            $latest_version = \Config::get('app.version');
-        }
 
         // Detect missing migrations.
         $migrations_output = \Helper::runCommand('migrate:status');
@@ -214,13 +198,12 @@ class SystemController extends Controller
             'functions'             => $functions,
             'permissions'           => $permissions,
             'new_version_available' => $new_version_available,
-            'latest_version'        => $latest_version,
+//            'latest_version'        => $latest_version,
             'latest_version_error'  => SystemController::$latest_version_error,
             'public_symlink_exists' => $public_symlink_exists,
             'env_is_writable'       => $env_is_writable,
             'non_writable_cache_file' => $non_writable_cache_file,
             'missing_migrations'    => $missing_migrations,
-            'invalid_symlinks'      => \App\Module::checkSymlinks(),
         ]);
     }
 

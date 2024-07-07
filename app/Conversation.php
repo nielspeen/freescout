@@ -15,7 +15,6 @@ use App\Events\ConversationStatusChanged;
 use App\Events\ConversationUserChanged;
 use App\Events\ConversationCustomerChanged;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Input;
 use Watson\Rememberable\Rememberable;
 
 class Conversation extends Model
@@ -962,8 +961,8 @@ class Conversation extends Model
     {
         if (!empty(request()->folder_id)) {
             return request()->folder_id;
-        } elseif (!empty(Input::get('folder_id'))) {
-            return Input::get('folder_id');
+        } elseif (!empty(request()->get('folder_id'))) {
+            return request()->get('folder_id');
         }
 
         return '';

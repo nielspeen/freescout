@@ -54,43 +54,5 @@ class AppServiceProvider extends ServiceProvider
             redirect(\Helper::getSubdirectory().'/install.php')->send();
         }
 
-        // Process module registration error - disable module and show error to admin
-        \Eventy::addFilter('modules.register_error', function ($exception, $module) {
-
-            $msg = __('The :module_name module has been deactivated due to an error: :error_message', ['module_name' => $module->getName(), 'error_message' => $exception->getMessage()]);
-
-            \Log::error($msg);
-
-            // request() does is empty at this stage
-            if (!empty($_POST['action']) && $_POST['action'] == 'activate') {
-
-                // During module activation in case of any error we have to deactivate module.
-                \App\Module::deactiveModule($module->getAlias());
-
-                \Session::flash('flashes_floating', [[
-                    'text' => $msg,
-                    'type' => 'danger',
-                    'role' => \App\User::ROLE_ADMIN,
-                ]]);
-
-                return;
-            } elseif (empty($_POST)) {
-
-                // failed to open stream: No such file or directory
-                if (strstr($exception->getMessage(), 'No such file or directory')) {
-                    \App\Module::deactiveModule($module->getAlias());
-
-                    \Session::flash('flashes_floating', [[
-                        'text' => $msg,
-                        'type' => 'danger',
-                        'role' => \App\User::ROLE_ADMIN,
-                    ]]);
-                }
-
-                return;
-            }
-
-            return $exception;
-        }, 10, 2);
     }
 }

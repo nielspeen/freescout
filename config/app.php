@@ -362,14 +362,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Enter your proxy address in .env file if freescout.net is not available from your server
-    | (access to freescout.net is required to obtain official modules)
-    |--------------------------------------------------------------------------
-    */
-    'proxy' => env('APP_PROXY', ''),
-
-    /*
-    |--------------------------------------------------------------------------
     | Custom headers to add to all outgoing emails.
     | https://github.com/freescout-helpdesk/freescout/issues/2546#issuecomment-1380414908
     |--------------------------------------------------------------------------
@@ -593,8 +585,6 @@ return [
         // Custom
         'Helper'       => App\Misc\Helper::class,
         'MailHelper'   => App\Misc\Mail::class,
-        'ModuleHelper' => App\Module::class,
-        'WpApi'        => App\Misc\WpApi::class,
         'Option'       => App\Option::class,
         'Str'          => Illuminate\Support\Str::class,
         // Autodiscovery did not work for this one, becasuse it's composer.json

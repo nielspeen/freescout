@@ -206,9 +206,9 @@
         </tbody>
     </table>
 
-    @if ($invalid_symlinks)
-        @include('modules/partials/invalid_symlinks')
-    @endif
+{{--    @if ($invalid_symlinks)--}}
+{{--        @include('modules/partials/invalid_symlinks')--}}
+{{--    @endif--}}
 
     <h3 id="cron" class="margin-top-40">Cron Commands</h3>
     <p>
