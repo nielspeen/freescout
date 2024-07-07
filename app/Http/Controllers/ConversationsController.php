@@ -263,7 +263,7 @@ class ConversationsController extends Controller
             if ($customer->getFullName()) {
                 $name = [$customer->id => $customer->getFullName()];
             }
-            $last_phone = array_last($customer->getPhones());
+            $last_phone = Arr::last($customer->getPhones());
             if (!empty($last_phone)) {
                 $phone = $last_phone['value'];
             }

@@ -23,6 +23,7 @@
         "laravel/legacy-factories": "*",
         "laravel/tinker": "*",
         "laravel/ui": "^4.5",
+        "livewire/livewire": "^3.5",
         "mews/purifier": "^3.4.2",
         "ramsey/uuid": "^4.7.6",
         "rap2hpoutre/laravel-log-viewer": "^v2.3.0",
