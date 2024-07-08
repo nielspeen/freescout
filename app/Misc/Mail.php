@@ -395,7 +395,7 @@ class Mail
 
         try {
             \Config::set('imap.options.debug', true);
-            \Webklex\PHPIMAP\Connection\Protocols\ImapProtocol::$output_debug_log = false;
+//            \Webklex\PHPIMAP\Connection\Protocols\ImapProtocol::$output_debug_log = false;
 
             $client = \MailHelper::getMailboxClient($mailbox);
 
