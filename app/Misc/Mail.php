@@ -6,6 +6,7 @@ use App\Mailbox;
 use App\Option;
 use App\SendLog;
 use Webklex\IMAP\Client;
+use Webklex\PHPIMAP\Connection\Protocols\ImapProtocol;
 
 // todo: rename into MailHelper
 class Mail
@@ -440,7 +441,8 @@ class Mail
         }
 
         if ($result['result'] == 'error') {
-            $result['log'] = \Webklex\PHPIMAP\Connection\Protocols\ImapProtocol::getDebugLog();
+            dd($result);
+//            $result['log'] = \Webklex\PHPIMAP\Connection\Protocols\ImapProtocol::getDebugLog();
         }
 
         return $result;
